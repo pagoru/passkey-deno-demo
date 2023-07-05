@@ -1,0 +1,12 @@
+https://web.local {
+  tls self_signed
+  proxy / http://localhost:8080 {
+    transparent
+  }
+}
+https://api.local {
+   tls self_signed
+   proxy / http://localhost:9090 {
+     transparent
+   }
+ }

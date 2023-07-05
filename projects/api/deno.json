@@ -1,0 +1,13 @@
+{
+	"tasks": {
+		"build": "deno run -A build.ts",
+		"start": "deno run -A --unstable --watch=src/ dev.ts "
+	},
+	"imports": {
+		"deno/": "https://deno.land/std@0.192.0/",
+		"oak/": "https://deno.land/x/oak@v12.5.0/",
+		"cors": "https://deno.land/x/cors/mod.ts",
+		"crypto_random_string": "https://deno.land/x/crypto_random_string@1.0.0/mod.ts",
+		"fido2": "https://deno.land/x/fido2@3.4.1/dist/main.js"
+	}
+}

@@ -1,0 +1,16 @@
+* {
+  font-size: 1.6rem;
+  font-family: "Inter", "Inria Sans", sans-serif;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10px !important;
+}
+
+body {
+  overflow-x: hidden;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+}

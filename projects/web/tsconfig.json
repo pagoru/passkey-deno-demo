@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"module": "CommonJS",
+		"target": "ES6",
+		"esModuleInterop": true,
+		"sourceMap": false,
+		"noUnusedLocals": true,
+		"lib": [
+				"ES2021",
+				"DOM",
+		],
+		"baseUrl": "./src",
+		"rootDir": "./",
+		"jsx": "react"
+	}
+}
