@@ -4,6 +4,7 @@ import { cryptoRandomString } from "crypto_random_string";
 import { Fido2Lib } from "fido2";
 
 const kv = await Deno.openKv();
+// await kv.delete(["users", "pagoru"]);
 
 const router = new Router();
 
@@ -20,6 +21,19 @@ const f2l = new Fido2Lib({
   authenticatorUserVerification: "required",
 });
 
+const bufferToBase64 = (arrayBuffer: Uint8Array): string =>
+  btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+
+const base64ToBuffer = (base64String: string): Uint8Array => {
+  const decodedString = atob(base64String);
+  const uint8Array = new Uint8Array(decodedString.length);
+
+  for (let i = 0; i < decodedString.length; i++) {
+    uint8Array[i] = decodedString.charCodeAt(i);
+  }
+  return uint8Array.buffer;
+};
+
 router
   .get("/register", async (context) => {
     const challenge = cryptoRandomString({ length: 64 });
@@ -28,12 +42,10 @@ router
     const username = context.request.url.searchParams.get("username");
 
     const res = await kv.get(["users", username]);
-    console.log(res && res.value.status);
-    if (res && res.value.status === "verified") {
+    if (res && res.value?.status === "verified") {
       context.response.status = 409;
       return;
     }
-    console.log("challenge v1", challenge);
     await kv.set(["users", username], { challenge, userId, status: "pending" });
 
     const registrationOptions = await f2l.attestationOptions();
@@ -49,17 +61,6 @@ router
   .post("/register", async (context) => {
     try {
       const { credential, userId } = await context.request.body().value;
-
-      const base64ToBuffer = (base64String: string): Uint8Array => {
-        const decodedString = atob(base64String);
-        const uint8Array = new Uint8Array(decodedString.length);
-
-        for (let i = 0; i < decodedString.length; i++) {
-          uint8Array[i] = decodedString.charCodeAt(i);
-        }
-
-        return uint8Array.buffer;
-      };
 
       const attestation = {
         id: credential.id,
@@ -99,7 +100,7 @@ router
       const publicKey = authnrData.get("credentialPublicKeyPem"); // string
 
       await kv.set(user.key, {
-        challenge: undefined,
+        ...user.value,
         authnr: { credId, counter, publicKey },
         status: "verified",
       });
@@ -108,6 +109,65 @@ router
       console.error(e);
       context.response.status = 500;
     }
+  })
+  .get("/validate", async (context) => {
+    const username = context.request.url.searchParams.get("username");
+
+    const res = await kv.get(["users", username]);
+    if (!res || res.value.status !== "verified") {
+      context.response.status = 406;
+      return;
+    }
+    console.log(res.value.challenge);
+    const authnOptions = await f2l.attestationOptions();
+    console.log(authnOptions);
+    authnOptions.challenge = res.value.challenge;
+    authnOptions.allowCredentials = [
+      { type: "public-key", id: bufferToBase64(res.value.authnr.credId) },
+    ];
+
+    context.response.body = authnOptions;
+  })
+  .post("/validate", async (context) => {
+    const { credential, userId } = await context.request.body().value;
+
+    const attestation = {
+      id: credential.id,
+      rawId: base64ToBuffer(new Uint8Array(credential.rawId)),
+      response: {
+        clientDataJSON: credential.response.clientDataJSON,
+        authenticatorData: base64ToBuffer(
+          new Uint8Array(credential.response.authenticatorData),
+        ),
+        signature: base64ToBuffer(
+          new Uint8Array(credential.response.signature),
+        ),
+        userHandle: credential.response.userHandle, // credential.response.userHandle,
+      },
+      type: credential.type,
+    };
+
+    let user;
+
+    const iter = await kv.list<string>({ prefix: ["users"] });
+    for await (const currentUser of iter) {
+      if (currentUser.value.userId === userId) {
+        user = currentUser;
+      }
+    }
+
+    const assertionExpectations = {
+      challenge: btoa(user.value.challenge),
+      origin: "https://web.local",
+      factor: "either",
+      publicKey: user.value.authnr.publicKey,
+      prevCounter: user.value.authnr.counter,
+      userHandle: user.value.userId,
+    };
+
+    await f2l.assertionResult(attestation, assertionExpectations);
+
+    console.log("Validated user");
   });
 
 const app = new Application();

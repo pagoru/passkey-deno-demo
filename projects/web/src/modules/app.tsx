@@ -1,5 +1,18 @@
 import React, { useState } from "react";
 
+const bufferToBase64 = (arrayBuffer: Uint8Array): string =>
+  btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+
+const base64ToBuffer = (base64String: string): Uint8Array => {
+  const decodedString = atob(base64String);
+  const uint8Array = new Uint8Array(decodedString.length);
+
+  for (let i = 0; i < decodedString.length; i++) {
+    uint8Array[i] = decodedString.charCodeAt(i);
+  }
+  return uint8Array.buffer;
+};
+
 export const App = () => {
   const [username, setUsername] = useState<string>("pagoru");
 
@@ -30,10 +43,6 @@ export const App = () => {
         new Uint8Array(credential.response.clientDataJSON),
       ),
     );
-
-    const bufferToBase64 = (arrayBuffer: Uint8Array): string =>
-      btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
-
     const passableCredential = {
       id: credential.id,
       rawId: bufferToBase64(new Uint8Array(credential.rawId)),
@@ -50,7 +59,7 @@ export const App = () => {
       },
       type: credential.type,
     };
-    console.log(atob(clientDataJSON.challenge), passableCredential);
+
     response = await fetch("https://api.local/register", {
       method: "POST",
       headers: {
@@ -65,8 +74,69 @@ export const App = () => {
     });
   };
 
+  const validateAccount = async () => {
+    let response = await fetch(
+      `https://api.local/validate?username=${username}`,
+    );
+    const authnOptions = await response.json();
+    console.log(authnOptions.allowCredentials);
+    authnOptions.allowCredentials = authnOptions.allowCredentials.map(
+      (item) => ({
+        ...item,
+        id: base64ToBuffer(item.id),
+      }),
+    );
+    authnOptions.challenge = new TextEncoder().encode(authnOptions.challenge);
+
+    console.log("???");
+    const credential = await navigator.credentials.get({
+      publicKey: authnOptions,
+    });
+    console.log("??? v2");
+
+    const clientDataJSON = JSON.parse(
+      new TextDecoder().decode(
+        new Uint8Array(credential.response.clientDataJSON),
+      ),
+    );
+
+    const passableCredential = {
+      id: credential.id,
+      rawId: bufferToBase64(new Uint8Array(credential.rawId)),
+      response: {
+        clientDataJSON: btoa(
+          JSON.stringify({
+            challenge: atob(clientDataJSON.challenge),
+            ...clientDataJSON,
+          }),
+        ),
+        authenticatorData: bufferToBase64(
+          new Uint8Array(credential.response.authenticatorData),
+        ),
+        signature: bufferToBase64(
+          new Uint8Array(credential.response.signature),
+        ),
+        userHandle: new TextDecoder().decode(
+          new Uint8Array(credential.response.userHandle),
+        ), // credential.response.userHandle,
+      },
+      type: credential.type,
+    };
+    console.log(passableCredential);
+
+    response = await fetch("https://api.local/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        credential: passableCredential,
+        userId: passableCredential.response.userHandle,
+      }),
+    });
+  };
+
   const onRegister = async (event) => {
-    console.log("?");
     event.preventDefault();
     try {
       await createAccount();
@@ -77,6 +147,11 @@ export const App = () => {
 
   const onLogin = async (event) => {
     event.preventDefault();
+    try {
+      await validateAccount();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
