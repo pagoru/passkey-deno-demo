@@ -10,7 +10,7 @@ const router = new Router();
 
 const f2l = new Fido2Lib({
   timeout: 60000,
-  rpId: "web.local",
+  rpId: Deno.env.get("RP_ID"),
   rpName: "Testing auth",
   // rpIcon: "https://example.com/logo.png",
   challengeSize: 128,
@@ -85,7 +85,7 @@ router
 
       const attestationExpectations = {
         challenge: btoa(user.value.challenge),
-        origin: "https://web.local",
+        origin: Deno.env.get("WEB_URL"),
         factor: "either",
       };
 
@@ -158,7 +158,7 @@ router
 
     const assertionExpectations = {
       challenge: btoa(user.value.challenge),
-      origin: "https://web.local",
+      origin: Deno.env.get("WEB_URL"),
       factor: "either",
       publicKey: user.value.authnr.publicKey,
       prevCounter: user.value.authnr.counter,
