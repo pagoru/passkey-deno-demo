@@ -23,6 +23,14 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v3
 
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1.3
+        with:
+          envkey_WEB_URL: ${{ secrets.WEB_URL }}
+          envkey_RP_ID: ${{ secrets.RP_ID }}
+          directory: projects/api/
+          file_name: 'env'
+
       - name: Deploy to Deno Deploy
         uses: denoland/deployctl@v1
         with:
