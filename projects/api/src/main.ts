@@ -6,7 +6,6 @@ import { Fido2Lib } from "fido2";
 const kv = await Deno.openKv();
 // await kv.delete(["users", "pagoru"]);
 console.log("TEST 1");
-console.info("TEST 2");
 
 const router = new Router();
 
@@ -62,7 +61,7 @@ router
   })
   .post("/register", async (context) => {
     try {
-      console.info("HELLO?");
+      console.log("POST /register");
       const { credential, userId } = await context.request.body().value;
 
       const attestation = {
@@ -102,7 +101,7 @@ router
       const counter = authnrData.get("counter"); // int
       const publicKey = authnrData.get("credentialPublicKeyPem"); // string
 
-      const updated = await kv.set(user.key, {
+      await kv.set(user.key, {
         ...user.value,
         authnr: { credId, counter, publicKey },
         status: "verified",
