@@ -2,6 +2,8 @@ name: WEB
 on:
   workflow_dispatch:
   push:
+    paths:
+      - 'projects/web/**/*.*'
 
 jobs:
   publish:
