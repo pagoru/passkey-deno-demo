@@ -39,7 +39,7 @@ router
   .get("/register", async (context) => {
     try {
       console.log("GET /register");
-      console.log(kv);
+      console.log("->", kv);
       const challenge = cryptoRandomString({ length: 64 });
       const userId = cryptoRandomString({ length: 32 });
 
