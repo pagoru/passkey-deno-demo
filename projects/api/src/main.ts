@@ -118,9 +118,9 @@ router
       context.response.status = 406;
       return;
     }
-    console.log(res.value.challenge);
     const authnOptions = await f2l.attestationOptions();
-    console.log(authnOptions);
+
+    //TODO Needs a new challenge
     authnOptions.challenge = res.value.challenge;
     authnOptions.allowCredentials = [
       { type: "public-key", id: bufferToBase64(res.value.authnr.credId) },
@@ -129,45 +129,49 @@ router
     context.response.body = authnOptions;
   })
   .post("/validate", async (context) => {
-    const { credential, userId } = await context.request.body().value;
+    try {
+      const { credential, userId } = await context.request.body().value;
 
-    const attestation = {
-      id: credential.id,
-      rawId: base64ToBuffer(new Uint8Array(credential.rawId)),
-      response: {
-        clientDataJSON: credential.response.clientDataJSON,
-        authenticatorData: base64ToBuffer(
-          new Uint8Array(credential.response.authenticatorData),
-        ),
-        signature: base64ToBuffer(
-          new Uint8Array(credential.response.signature),
-        ),
-        userHandle: credential.response.userHandle, // credential.response.userHandle,
-      },
-      type: credential.type,
-    };
+      const attestation = {
+        id: credential.id,
+        rawId: base64ToBuffer(credential.rawId),
+        response: {
+          clientDataJSON: credential.response.clientDataJSON,
+          authenticatorData: base64ToBuffer(
+            credential.response.authenticatorData,
+          ),
+          signature: base64ToBuffer(credential.response.signature),
+          userHandle: credential.response.userHandle, // credential.response.userHandle,
+        },
+        type: credential.type,
+      };
 
-    let user;
+      let user;
 
-    const iter = await kv.list<string>({ prefix: ["users"] });
-    for await (const currentUser of iter) {
-      if (currentUser.value.userId === userId) {
-        user = currentUser;
+      const iter = await kv.list<string>({ prefix: ["users"] });
+      for await (const currentUser of iter) {
+        if (currentUser.value.userId === userId) {
+          user = currentUser;
+        }
       }
+
+      const assertionExpectations = {
+        challenge: btoa(user.value.challenge),
+        origin: Deno.env.get("WEB_URL"),
+        factor: "either",
+        publicKey: user.value.authnr.publicKey,
+        prevCounter: user.value.authnr.counter,
+        userHandle: user.value.userId,
+      };
+
+      await f2l.assertionResult(attestation, assertionExpectations);
+
+      console.log("Validated user");
+      context.response.status = 200;
+    } catch (e) {
+      console.error(e);
+      context.response.status = 500;
     }
-
-    const assertionExpectations = {
-      challenge: btoa(user.value.challenge),
-      origin: Deno.env.get("WEB_URL"),
-      factor: "either",
-      publicKey: user.value.authnr.publicKey,
-      prevCounter: user.value.authnr.counter,
-      userHandle: user.value.userId,
-    };
-
-    await f2l.assertionResult(attestation, assertionExpectations);
-
-    console.log("Validated user");
   });
 
 const app = new Application();
