@@ -5,6 +5,8 @@ import { Fido2Lib } from "fido2";
 
 const kv = await Deno.openKv();
 // await kv.delete(["users", "pagoru"]);
+console.log("TEST 1");
+console.info("TEST 2");
 
 const router = new Router();
 
