@@ -60,6 +60,7 @@ router
   })
   .post("/register", async (context) => {
     try {
+      console.info("HELLO?");
       const { credential, userId } = await context.request.body().value;
 
       const attestation = {
@@ -104,8 +105,6 @@ router
         authnr: { credId, counter, publicKey },
         status: "verified",
       });
-      console.info("HELLO?");
-      console.debug(updated);
       context.response.status = 200;
     } catch (e) {
       console.error(e);
