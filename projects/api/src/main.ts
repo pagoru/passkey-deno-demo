@@ -104,7 +104,7 @@ router
         authnr: { credId, counter, publicKey },
         status: "verified",
       });
-      console.log(updated);
+      console.debug(updated);
       context.response.status = 200;
     } catch (e) {
       console.error(e);
