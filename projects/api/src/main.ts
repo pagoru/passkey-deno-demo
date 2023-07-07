@@ -37,6 +37,9 @@ const base64ToBuffer = (base64String: string): Uint8Array => {
 };
 
 router
+  .get("/", async (context) => {
+    context.response.body = "v1";
+  })
   .get("/register", async (context) => {
     try {
       console.log("GET /register");
