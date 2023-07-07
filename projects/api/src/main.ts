@@ -44,6 +44,7 @@ router
     const username = context.request.url.searchParams.get("username");
 
     const res = await kv.get(["users", username]);
+    console.log(res);
     if (res && res.value?.status === "verified") {
       context.response.status = 409;
       return;
