@@ -99,11 +99,12 @@ router
       const counter = authnrData.get("counter"); // int
       const publicKey = authnrData.get("credentialPublicKeyPem"); // string
 
-      await kv.set(user.key, {
+      const updated = await kv.set(user.key, {
         ...user.value,
         authnr: { credId, counter, publicKey },
         status: "verified",
       });
+      console.log(updated);
       context.response.status = 200;
     } catch (e) {
       console.error(e);
