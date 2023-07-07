@@ -18,7 +18,7 @@ export const App = () => {
 
   const createAccount = async () => {
     let response = await fetch(
-      `https://api.local/register?username=${username}`,
+      `${window.__env__.API_URL}/register?username=${username}`,
     );
     const credentialsCreateProps = await response.json();
     credentialsCreateProps.challenge = new TextEncoder().encode(
@@ -60,7 +60,7 @@ export const App = () => {
       type: credential.type,
     };
 
-    response = await fetch("https://api.local/register", {
+    response = await fetch("${window.__env__.API_URL}/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export const App = () => {
 
   const validateAccount = async () => {
     let response = await fetch(
-      `https://api.local/validate?username=${username}`,
+      `${window.__env__.API_URL}/validate?username=${username}`,
     );
     const authnOptions = await response.json();
     console.log(authnOptions.allowCredentials);
@@ -124,7 +124,7 @@ export const App = () => {
     };
     console.log(passableCredential);
 
-    response = await fetch("https://api.local/validate", {
+    response = await fetch(`${window.__env__.API_URL}/validate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
