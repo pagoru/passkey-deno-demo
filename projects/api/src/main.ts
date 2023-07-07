@@ -37,6 +37,7 @@ const base64ToBuffer = (base64String: string): Uint8Array => {
 
 router
   .get("/register", async (context) => {
+    console.log("GET /register");
     const challenge = cryptoRandomString({ length: 64 });
     const userId = cryptoRandomString({ length: 32 });
 
@@ -60,8 +61,8 @@ router
     context.response.body = registrationOptions;
   })
   .post("/register", async (context) => {
+    console.log("POST /register");
     try {
-      console.log("POST /register");
       const { credential, userId } = await context.request.body().value;
 
       const attestation = {
