@@ -29,7 +29,7 @@ jobs:
           envkey_WEB_URL: ${{ vars.WEB_URL }}
           envkey_RP_ID: ${{ vars.RP_ID }}
           directory: projects/api/
-          file_name: 'env'
+          file_name: '.env'
 
       - name: Deploy to Deno Deploy
         uses: denoland/deployctl@v1
