@@ -37,29 +37,38 @@ const base64ToBuffer = (base64String: string): Uint8Array => {
 
 router
   .get("/register", async (context) => {
-    console.log("GET /register");
-    const challenge = cryptoRandomString({ length: 64 });
-    const userId = cryptoRandomString({ length: 32 });
+    try {
+      console.log("GET /register");
+      console.log(kv);
+      const challenge = cryptoRandomString({ length: 64 });
+      const userId = cryptoRandomString({ length: 32 });
 
-    const username = context.request.url.searchParams.get("username");
+      const username = context.request.url.searchParams.get("username");
 
-    const res = await kv.get(["users", username]);
-    console.log(res);
-    if (res && res.value?.status === "verified") {
-      context.response.status = 409;
-      return;
+      const res = await kv.get(["users", username]);
+      if (res && res.value?.status === "verified") {
+        context.response.status = 409;
+        return;
+      }
+      await kv.set(["users", username], {
+        challenge,
+        userId,
+        status: "pending",
+      });
+
+      const registrationOptions = await f2l.attestationOptions();
+      registrationOptions.challenge = challenge;
+      registrationOptions.user = {
+        id: userId,
+        name: "name-" + userId, // if use email...
+        displayName: "displayName-" + userId,
+      };
+
+      context.response.body = registrationOptions;
+    } catch (e) {
+      context.response.status = 200;
+      console.error(e);
     }
-    await kv.set(["users", username], { challenge, userId, status: "pending" });
-
-    const registrationOptions = await f2l.attestationOptions();
-    registrationOptions.challenge = challenge;
-    registrationOptions.user = {
-      id: userId,
-      name: "name-" + userId, // if use email...
-      displayName: "displayName-" + userId,
-    };
-
-    context.response.body = registrationOptions;
   })
   .post("/register", async (context) => {
     console.log("POST /register");
