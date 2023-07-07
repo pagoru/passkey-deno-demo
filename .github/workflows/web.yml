@@ -41,7 +41,7 @@ jobs:
       - name: Deploy to Deno Deploy
         uses: denoland/deployctl@v1
         with:
-          project: dev-web # the name of the project on Deno Deploy
+          project: passkey-deno-demo # the name of the project on Deno Deploy
           entrypoint: main.ts # the entrypoint to deploy
           root: projects/web
           import-map: deno.json
